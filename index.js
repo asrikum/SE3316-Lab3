@@ -1,4 +1,3 @@
-const Joi = require('joi');
 const express = require('express');
 //dependant on two modules joi, express
 const app = express();
@@ -11,7 +10,7 @@ const fs = require('fs').promises; // Make sure to use the promises version of f
 
 // Wrap the file reading in an async function
 async function loadSuperheroes() {
-  const data = await fs.readFile('express-demo/superheroes/superhero_powers.json', 'utf8');
+  const data = await fs.readFile('./superheroes/superhero_powers.json', 'utf8');
   return JSON.parse(data);
 }
 
@@ -34,11 +33,11 @@ loadSuperheroes().then(data => {
   console.error('Failed to load superheroes:', error);
 });
 
-router.get('/:id/powers', async (req, res) => {
-    console.log("whatever")
+router.get('/:name/powers', async (req, res) => {
+    console.log("whatever");
     try {
        // Extract the name from the request parameters
-    const superheroName = req.params.id;
+    const superheroName = req.params.name;
 
     // Find the superhero by name
     const superhero = superheroes.find(sh => sh.hero_names === superheroName);
@@ -61,32 +60,35 @@ router.get('/:id/powers', async (req, res) => {
   }
   });
 
+  async function loadSuperheroesPublisher() {
+    const datapub = await fs.readFile('./superheroes/superhero_info.json', 'utf8');
+    return JSON.parse(datapub);
+  }
+  let superhero_pub = [];
+  loadSuperheroesPublisher().then(data => {
+    superhero_pub = data;
+  }).catch(error => {
+    console.error('Failed to load superhero Publisher:', error);
+  });
 
-
-router.get('/:id', async (req, res) => {
+router.get('/:id/publisher', async (req, res) => {
     try {
 
-        const data = await fs.readFile('express-demo\superheroes\superhero_info.json', 'utf8');
-        const superherodata = JSON.parse(data);
+    const superheropublisher = parseInt(req.params.id);
 
-    const superheropublisher = req.params.id;
-
-    const superheropublisherid = superherodata.find(sh => sh.id === superheropublisher);
+    const superheropublisherid = superhero_pub.find(sh => sh.id === superheropublisher);
 // If the superhero is not found, send a 404 response
 if (!superheropublisherid) {
     return res.status(404).send('Superhero not found');
   }
-  const publisher = Object.entries(superheropublisherid)
-  .filter(([key, value]) => value === "Publisher" && key !== "id")
-  .map(([key]) => key);
-  res.json(publisher);
-    } 
+  res.json({ publisher: superheropublisherid.Publisher });
+}
     catch (error) {
         // If there's an error, send a 500 response
         res.status(500).send('Server error');
       }
 });  
 // PORT
-const port = process.env.PORT || 3000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
+const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
 app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
 // the / represents the connection to the site(Path or Url), response and request
