@@ -22,7 +22,7 @@ app.use((req, res, next) => {
 
 router.route('/')//All the routes to the base prefix
     .get((req,res) =>{//get a list of parst
-        res.send(parts);
+        res.send(superhero_pub);
     })
 
 // Call the function to load superheroes when starting the server
@@ -88,6 +88,31 @@ if (!superheropublisherid) {
         res.status(500).send('Server error');
       }
 });  
+
+router.get('/search', (req, res)=> {
+
+const {field, pattern, n} = req.query;
+
+if (!field || !pattern) {
+    return res.status(400).send('Search field and pattern must be provided');
+  }
+
+  // Perform the search
+  const regex = new RegExp(pattern, 'i'); // 'i' flag for case-insensitive search
+  const filteredSuperheroes = superhero_pub.filter(sh => regex.test(sh[field]));
+
+  // Limit the number of results if 'n' is provided
+  const limitedResults = typeof n !== 'undefined' ? filteredSuperheroes.slice(0, n) : filteredSuperheroes;
+
+  if(n == "undefined"){
+    res.json(filteredSuperheroes);
+  }
+  // Respond with the search results
+  res.json(limitedResults);
+});
+
+
+
 // PORT
 const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
 app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
