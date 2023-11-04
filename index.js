@@ -68,7 +68,7 @@ router.get('/:name/powers', async (req, res) => {
   loadSuperheroesPublisher().then(data => {
     superhero_pub = data;
   }).catch(error => {
-    console.error('Failed to load superhero Publisher:', error);
+    console.error('Failed to load superhero context:', error);
   });
 
 router.get('/:id/publisher', async (req, res) => {
@@ -111,6 +111,23 @@ if (!field || !pattern) {
   res.json(limitedResults);
 });
 
+router.get('/:id', (req, res) => {
+    try {
+
+        const superheroid = parseInt(req.params.id);
+    
+        const superhero = superhero_pub.find(sh => sh.id === superheroid);
+    // If the superhero is not found, send a 404 response
+    if (!superhero) {
+        return res.status(404).send('Superhero not found');
+      }
+      res.json(superhero);
+    }
+        catch (error) {
+            // If there's an error, send a 500 response
+            res.status(500).send('Server error');
+          }
+});
 
 
 // PORT
