@@ -1,30 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>My Website</title>
-    <link rel="stylesheet" href="style.css">
-  </head>
-  <body>
-    <main>
-        <h1>Welcome to My Website</h1> 
-        <div class="intro">
-          <h2>Our Inventory <button id = "get-inventory"></h2>
-            <ol id ="inventory"></ol>> 
-            </div>
-          <div class="admin">
-            <h2>Manage Inventory</h2>
-            <span>
-            name: <input type="text" id='name'>
-            choice: <input type="text" id='choice'>
-            stock: <input type="text" id='stock'>
-            <button id="additem">Add</button>
-            </span>
-            <span id="status"></span>
-          </div>  
-    </main>
-	<script src="script.js"></script>
-  </body>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superhero Search</title>
+</head>
+<body>
+<h1>Search for Superheroes</h1>
+<div id="searchForm">
+  <input type="text" id="searchTerm" placeholder="Enter search term..." >
+  <input type="text" id="displayvolume" placeholder="Enter number of results..." >
+  <select id="category">
+    <option value="name">Name</option>
+    <option value="Race">Race</option>
+    <option value="Publisher">Publisher</option>
+    <option value="power">Power</option>
+  </select>
+  <button type="submit" id="submit">Search</button>
+  <div id="results"></div>
+</div>
+
+
+<script src = "superhero.js"></script>
+</body>
 </html>
