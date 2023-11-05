@@ -1,6 +1,14 @@
 const express = require('express');
 //dependant on two modules joi, express
+const cors = require('cors');
+
+// Enable CORS for all routes
+
+
+// ... rest of your server setup
+
 const app = express();
+app.use(cors());
 const router = express.Router();
 app.use('/api/superheroes', router);
 router.use(express.json());
@@ -32,6 +40,34 @@ loadSuperheroes().then(data => {
 }).catch(error => {
   console.error('Failed to load superheroes:', error);
 });
+router.get('/search/power', async (req, res) => {
+  let { power } = req.query;
+
+  power = power.trim();
+
+  if (!power) {
+    return res.status(400).send('Power query parameter is required');
+  }
+
+  try {
+    const filteredSuperheroes = superheroes.filter(hero => {
+      // Check if any of the hero's powers match the power we're looking for
+      return Object.entries(hero).some(([key, value]) => key === power && value === "True");
+    });
+
+    if (filteredSuperheroes.length === 0) {
+      return res.status(404).send('No superheroes found with the given power');
+    }
+
+    const superheroNames = filteredSuperheroes.map(hero => hero.hero_names);
+
+    res.json(superheroNames);
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Server error');
+  }
+});
+
 
 router.get('/:name/powers', async (req, res) => {
     console.log("whatever");
@@ -88,28 +124,50 @@ if (!superheropublisherid) {
         res.status(500).send('Server error');
       }
 });  
+router.get('/publishers', async (req, res) => {
+  try {
+    // Create a set of unique publisher names
+    const publisherSet = new Set(superhero_pub.map(hero => hero.Publisher));
 
-router.get('/search', (req, res)=> {
+    // Convert the set back into an array
+    const publishers = [...publisherSet];
 
-const {field, pattern, n} = req.query;
+    // Send the list of unique publisher names
+    res.json(publishers);
+  } catch (error) {
+    // If there's an error, send a 500 response
+    res.status(500).send('Server error');
+  }
+});
 
-if (!field || !pattern) {
+router.get('/search', (req, res) => {
+  const { field, pattern, n } = req.query;
+
+  if (!field || !pattern) {
     return res.status(400).send('Search field and pattern must be provided');
   }
 
-  // Perform the search
-  const regex = new RegExp(pattern, 'i'); // 'i' flag for case-insensitive search
-  const filteredSuperheroes = superhero_pub.filter(sh => regex.test(sh[field]));
+  // Perform the search with case-insensitive matching
+  const regex = new RegExp(pattern, 'i');
+  
+  // Assuming superhero_pub is an array of superheroes with 'powers' as an array within each superhero object
+  const filteredSuperheroes = superhero_pub.filter(sh => {
+    // Check if the field is 'powers' and if so, search within the powers array
+    if (field === 'powers') {
+      return sh.powers.some(power => regex.test(power));
+    } else {
+      // For other fields, perform a regular regex test
+      return regex.test(sh[field]);
+    }
+  });
 
   // Limit the number of results if 'n' is provided
-  const limitedResults = typeof n !== 'undefined' ? filteredSuperheroes.slice(0, n) : filteredSuperheroes;
+  const limitedResults = n ? filteredSuperheroes.slice(0, n) : filteredSuperheroes;
 
-  if(n == "undefined"){
-    res.json(filteredSuperheroes);
-  }
   // Respond with the search results
   res.json(limitedResults);
 });
+
 
 router.get('/:id', (req, res) => {
     try {
@@ -131,6 +189,9 @@ router.get('/:id', (req, res) => {
 
 
 // PORT
+const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
+app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
+// the / represents the connection to the site(Path or Url), response and request
 const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
 app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
 // the / represents the connection to the site(Path or Url), response and request
