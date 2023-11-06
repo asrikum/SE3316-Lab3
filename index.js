@@ -237,10 +237,7 @@ app.post('/api/lists/:listName', async (req, res) => {
   }
 
   // Add superhero IDs to the existing list
-  const currentList = db.get(`lists.${listName}`).value();
-  const updatedList = [...currentList, ...superheroIds];
-  const superheroid = parseInt(updatedList);
-  const numberOfElements = updatedList.length;
+  const updatedList = [...superheroIds];
   const uniqueElementsSet = new Set(updatedList);
 const numberOfUniqueElements = uniqueElementsSet.size;
 console.log(uniqueElementsSet);
@@ -261,6 +258,68 @@ console.log(listheroes);
   });
 });
 
+app.get('/api/lists/:listName', async (req, res) => {
+  try {
+    // Extract the listName from the request parameters
+    const { listName } = req.params;
+
+    // Check if the list name exists in the database
+    const listExists = db.has(`lists.${listName}`).value();
+
+    if (!listExists) {
+      // If the list name does not exist, return an error
+      return res.status(404).send('List name does not exist.');
+    }
+    // Retrieve the current list from the database
+    const currentList = db.get(`lists.${listName}`).value();
+    const uniqueElementsSet = new Set(currentList);
+    const numberOfUniqueElements = uniqueElementsSet.size;
+    console.log(uniqueElementsSet);
+    const uniqueElementsArray = Array.from(uniqueElementsSet);
+    let superheroarray = [];
+    for(let i =0; i< numberOfUniqueElements; i++){
+    const listheroes = uniqueElementsArray[i];  
+    console.log(listheroes);
+    const superhero = superhero_pub.find(sh => sh.id === listheroes);
+    superheroarray.push(superhero)
+      console.log(superhero);
+    };
+    // Send the current list as the response
+    res.status(200).json({
+      message: 'Superhero IDs shown from the list successfully.',
+      list: currentList,
+      Supeheroes:superheroarray
+  });
+
+  } catch (error) {
+    // If there's an error, log it and send a 500 response
+    console.error('Server error:', error);
+  }
+});
+
+app.delete('/api/lists/:listName', (req, res) => {
+  try {
+    // Extract the listName from the request parameters
+    const { listName } = req.params;
+
+    // Check if the list name exists in the database
+    const listExists = db.has(`lists.${listName}`).value();
+
+    if (!listExists) {
+      // If the list name does not exist, return an error
+      return res.status(404).send('List name does not exist.');
+    }
+    db.unset(`lists.${listName}`).write();
+
+    // Send a success response
+    res.status(200).send('List deleted successfully.');
+} catch (error) {
+  // If there's an error, log it and send a 500 response
+  console.error('Server error:', error);
+  res.status(500).send('Server error');
+}
+  
+});
 
 // PORT
 const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
