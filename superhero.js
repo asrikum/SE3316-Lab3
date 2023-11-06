@@ -10,6 +10,8 @@ const superhero_ids = document.getElementById('ID');
 const listresults = document.getElementById('list_results');
 const listreturn = document.getElementById('Return');
 const listreturnbutton = document.getElementById('submitreturn');
+const categoryorder = document.getElementById('Category Order');
+const listorder = document.getElementById('List Order');
 const fetchSuperhero = async () => {
     try{
 const res = await fetch('/api/superheroes')
@@ -107,7 +109,7 @@ function createSuperheroList(listName, superheroIds) {
 
 
 // Define the function that will handle the search
-function searchSuperheroes(searchTerm, category, displayvolume, searchpower) {
+function searchSuperheroes(searchTerm, category, displayvolume, searchpower, categoryorder) {
     console.log(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
     if(category == 'power'){
         console.log(`api/superheroes/search/power?power=${searchpower}&n=${displayvolume}`);
@@ -132,7 +134,7 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower) {
   fetch(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
     .then(response => response.json())
     .then(data => {
-      displayResults(data);
+      displayResults(data, categoryorder, category);
     })
     .catch(error => {
       console.error('Error:', error);
@@ -141,7 +143,16 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower) {
 }
 
 // Define the function that will display the results
-function displayResults(superheroes) {
+function displayResults(superheroes, sortDirection, sortField) {
+    superheroes.sort((a, b) => {
+        if (a[sortField] < b[sortField]) {
+          return sortDirection === 'asc' ? -1 : 1;
+        }
+        if (a[sortField] > b[sortField]) {
+          return sortDirection === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = ''; // Clear previous results
   superheroes.forEach(hero => {
@@ -161,12 +172,13 @@ searchButton.addEventListener("click", () => {
   const searchTerm = searchTermInput.value.toLowerCase();
   const searchpower = searchTermInput.value;
   const category = categorySelect.value;
+  const catsorter = categoryorder.value;
   const displayvolume = parseInt(displayn);
 
   console.log(searchTerm, category, displayvolume, searchpower); // Log the search term and category for debugging
 
   // Call the search function with the current search term and category
-  searchSuperheroes(searchTerm, category, displayvolume, searchpower);
+  searchSuperheroes(searchTerm, category, displayvolume, searchpower, catsorter);
 });
 submitlistButton.addEventListener("click", () => {
   const listVal = listName.value;
@@ -176,6 +188,7 @@ submitlistButton.addEventListener("click", () => {
 });
 listreturnbutton.addEventListener("click", () => {
   const listreturnsi = listreturn.value;
+  const listsorter = listorder.value;
   getSuperheroList(listreturnsi);
 });
 
