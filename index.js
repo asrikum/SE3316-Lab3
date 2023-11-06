@@ -272,29 +272,76 @@ app.get('/api/lists/:listName', async (req, res) => {
     }
     // Retrieve the current list from the database
     const currentList = db.get(`lists.${listName}`).value();
+    let superheroDetails = [];
     const uniqueElementsSet = new Set(currentList);
     const numberOfUniqueElements = uniqueElementsSet.size;
     console.log(uniqueElementsSet);
     const uniqueElementsArray = Array.from(uniqueElementsSet);
     let superheroarray = [];
+    let superheroespowers= [];
     for(let i =0; i< numberOfUniqueElements; i++){
     const listheroes = uniqueElementsArray[i];  
     console.log(listheroes);
     const superhero = superhero_pub.find(sh => sh.id === listheroes);
-    superheroarray.push(superhero)
-      console.log(superhero);
-    };
-    // Send the current list as the response
-    res.status(200).json({
-      message: 'Superhero IDs shown from the list successfully.',
-      list: currentList,
-      Supeheroes:superheroarray
+    superheroarray.push(superhero);
+  }
+  for (let heroId of currentList) {
+    const superhero = superhero_pub.find(sh => sh.id === heroId);
+
+    console.log(superhero.name);
+    console.log(superhero.Gender);
+    if (superhero) {
+      const superheropowers = superheroes.find(sh => sh.hero_names === superhero.name);
+      if (superheropowers) {
+        const powers = Object.entries(superheropowers)
+          .filter(([key, value]) => value === "True" && key !== "hero_names")
+          .map(([key]) => key);
+          let eyeColor = superhero["Eye color"];
+          let skin = superhero["Skin color"];
+        superheroDetails.push({
+          id: heroId,
+          name: superhero.name,
+          gender: superhero.Gender,
+          Eye_Color: eyeColor,
+          race:superhero.Race,
+          Hair:superhero.Hair,
+          Height: superhero.Height,
+          Publisher:superhero.Publisher,
+          Skin: skin,
+          Alignment:superhero.Alignment,
+          Weight: superhero.Weight,
+          powers: powers,
+
+          
+        });
+      } else {
+        superheroDetails.push({
+          id: heroId,
+          name: superhero.name,
+          gender: superhero.Gender,
+          Eye_Color: eyeColor,
+          race:superhero.Race,
+          Hair:superhero.Hair,
+          Height: superhero.Height,
+          Publisher:superhero.Publisher,
+          Skin: skin,
+          Alignment:superhero.Alignment,
+          Weight: superhero.Weight,
+          powers: [] // No powers found
+        });
+      }
+    }
+  }
+
+  res.status(200).json({
+    message: 'Superhero details fetched successfully.',
+    superheroes: superheroDetails
   });
 
-  } catch (error) {
-    // If there's an error, log it and send a 500 response
-    console.error('Server error:', error);
-  }
+} catch (error) {
+  console.error('Server error:', error);
+  res.status(500).send('Server error');
+}
 });
 
 app.delete('/api/lists/:listName', (req, res) => {
