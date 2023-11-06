@@ -1,26 +1,32 @@
 const express = require('express');
-//dependant on two modules joi, express
 const cors = require('cors');
-
-// Enable CORS for all routes
-
-
-// ... rest of your server setup
+const lowdb = require('lowdb');
+const FileSync = require('lowdb/adapters/FileSync');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+app.use('/', express.static('client'));
+
+// Initialize lowdb
+const adapter = new FileSync('db.json');
+const db = lowdb(adapter);
+
+// Ensure default data is set in the database if it's empty
+function initializeDatabase() {
+    const hasPowers = db.has('powers').value();
+    const hasInfo = db.has('info').value();
+
+    if (!hasPowers || !hasInfo) {
+        const powersjson = require('./superheroes/superhero_powers.json');
+        const infojson = require('./superheroes/superhero_info.json');
+        db.defaults({ powers: powersjson, info: infojson }).write();
+    }
+}
+
+initializeDatabase();
 const router = express.Router();
 app.use('/api/superheroes', router);
-router.use(express.json());
-
-app.use('/', express.static('client'));
-const fs = require('fs').promises; // Make sure to use the promises version of fs
-
-// Wrap the file reading in an async function
-async function loadSuperheroes() {
-  const data = await fs.readFile('./superheroes/superhero_powers.json', 'utf8');
-  return JSON.parse(data);
-}
 
 app.use((req, res, next) => {
     console.log(`${req.method} request for ${req.url}`);
@@ -30,18 +36,15 @@ app.use((req, res, next) => {
 
 router.route('/')//All the routes to the base prefix
     .get((req,res) =>{//get a list of parst
-        res.send(superhero_pub);
+      const superheroes = db.get('info').value();
+    res.send(superheroes);
     })
 
 // Call the function to load superheroes when starting the server
-let superheroes = [];
-loadSuperheroes().then(data => {
-  superheroes = data;
-}).catch(error => {
-  console.error('Failed to load superheroes:', error);
-});
+const superheroes = db.get('powers').value();
+const superhero_pub = db.get('info').value();
 router.get('/search/power', async (req, res) => {
-  let { power } = req.query;
+  let { power, n } = req.query;
 
   power = power.trim();
 
@@ -60,8 +63,10 @@ router.get('/search/power', async (req, res) => {
     }
 
     const superheroNames = filteredSuperheroes.map(hero => hero.hero_names);
+    const limitedResults = n ? superheroNames.slice(0, n) : superheroNames;
 
-    res.json(superheroNames);
+
+    res.json(limitedResults);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -100,12 +105,6 @@ router.get('/:name/powers', async (req, res) => {
     const datapub = await fs.readFile('./superheroes/superhero_info.json', 'utf8');
     return JSON.parse(datapub);
   }
-  let superhero_pub = [];
-  loadSuperheroesPublisher().then(data => {
-    superhero_pub = data;
-  }).catch(error => {
-    console.error('Failed to load superhero context:', error);
-  });
 
 router.get('/:id/publisher', async (req, res) => {
     try {
@@ -187,11 +186,83 @@ router.get('/:id', (req, res) => {
           }
 });
 
+app.post('/api/lists', async(req, res)=>{
+  // Extract the list name and the superheroes from the request body
+  try {
+    
+  const { listName } = req.body;
+
+
+  // Check if the list name already exists
+  const listExists = db.has(`lists.${listName}`).value();
+
+  if (listExists) {
+      // If the list name exists, return an error
+      return res.status(400).send('List name already exists.');
+  }
+
+  // If the list name does not exist, create the new list
+  db.set(`lists.${listName}`, []).write();
+
+  // Return the newly created list
+  res.status(201).json({
+      message: 'New list created successfully.',
+      listName: listName
+      
+  });
+}catch (error) {
+    // If there's an error, send a 500 response
+    res.status(500).send('Server error');
+  }
+});
+
+app.post('/api/lists/:listName', async (req, res) => {
+  // Extract the list name from the URL parameters
+  const { listName } = req.params;
+
+  // Extract the superhero IDs from the request body
+  const { superheroIds } = req.body;
+
+  // Check if the list name already exists
+  const listExists = db.has(`lists.${listName}`).value();
+
+  if (!listExists) {
+      // If the list name does not exist, return an error
+      return res.status(404).send('List name does not exist.');
+  }
+
+  // Check if the superhero IDs are provided and are in an array
+  if (!Array.isArray(superheroIds)) {
+      return res.status(400).send('Superhero IDs must be an array.');
+  }
+
+  // Add superhero IDs to the existing list
+  const currentList = db.get(`lists.${listName}`).value();
+  const updatedList = [...currentList, ...superheroIds];
+  const superheroid = parseInt(updatedList);
+  const numberOfElements = updatedList.length;
+  const uniqueElementsSet = new Set(updatedList);
+const numberOfUniqueElements = uniqueElementsSet.size;
+console.log(uniqueElementsSet);
+const uniqueElementsArray = Array.from(uniqueElementsSet);
+for(let i =0; i< numberOfUniqueElements; i++){
+const listheroes = uniqueElementsArray[i];  
+console.log(listheroes);
+ const superhero = superhero_pub.find(sh => sh.id === listheroes);
+  console.log(superhero);
+};
+  // Update the list in the database
+  db.set(`lists.${listName}`, updatedList).write();
+
+  // Return the updated list
+  res.status(200).json({
+      message: 'Superhero IDs added to the list successfully.',
+      list: updatedList
+  });
+});
+
 
 // PORT
-const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
-app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
-// the / represents the connection to the site(Path or Url), response and request
 const port = process.env.PORT || 4000;// sets an arbritrary port value instead of 3000 as 3000 is more likely to be busy 
 app.listen(port, () => console.log(`Listening on port ${port}...`));// sends to local port
 // the / represents the connection to the site(Path or Url), response and request
