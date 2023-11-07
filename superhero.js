@@ -13,6 +13,7 @@ const listreturnbutton = document.getElementById('submitreturn');
 const categoryorder = document.getElementById('Category Order');
 const listorder = document.getElementById('List Order');
 const attributeSelect = document.getElementById('Attributes');
+
 const fetchSuperhero = async () => {
     try{
 const res = await fetch('/api/superheroes')
@@ -121,18 +122,14 @@ console.log(attributeorder);
                         return listsorter === 'descending' ? -1 : 1;
                       }
                     }
-
-                    
-
-                    
                     return 0;
                   });
                 }
                 data.superheroes.forEach(superhero => {
                     const div = document.createElement('div');
-                    
                     // Update these fields to match the actual properties of your superhero objects
                     div.innerHTML = `ID: ${superhero.id}, Name: ${superhero.name}, Gender: ${superhero.gender}, Eye Color: ${superhero.Eye_Color}, Race: ${superhero.race}, Hair: ${superhero.Hair}, Height: ${superhero.Height}, Publisher: ${superhero.Publisher}, Skin: ${superhero.Skin}, Alignment: ${superhero.Alignment}, Weight: ${superhero.Weight}, Powers: ${superhero.powers.join(', ')}`;
+                    resultsContainer.appendChild(div);
                     resultsContainer.appendChild(div);
                 });
             } else {
@@ -154,15 +151,7 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
         fetch(`api/superheroes/search/power?power=${searchpower}&n=${displayvolume}`)
         .then(response => response.json())
         .then(data => {
-            const resultsContainer = document.getElementById('results');
-            resultsContainer.innerHTML = ''; // Clear previous results
-            data.forEach(data => {
-              const div = document.createElement('div');
-              // Update these fields to match the actual properties of your superhero objects
-              div.textContent = `Name: ${data}`;
-              resultsContainer.appendChild(div);
-              
-            });
+            displayResults(data, categoryorder, category);
         })
         .catch(error => {
           console.error('Error:', error);
@@ -182,44 +171,49 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
 }
 
 function displayResults(superheroes, sortDirection, sortField) {
-        if(sortField == 'power'){
-            data.superheroes.sort((a, b) => {
-                const powersA = Array.isArray(a.powers) ? a.powers.length : 0;
-                const powersB = Array.isArray(b.powers) ? b.powers.length : 0;
-                return (powersA - powersB) * sortOrderMultiplier;
-            });
-        }
-        else{
-        
+  const sortOrderMultiplier = sortDirection === 'ascending' ? 1 : -1;
+
+  if (sortField === 'power') {
     superheroes.sort((a, b) => {
-        if(sortDirection==='ascending'){
-        if (a[sortField] < b[sortField]) {
-          return sortDirection === 'ascending' ? -1 : 1;
-        }
-        if (a[sortField] > b[sortField]) {
-          return sortDirection === 'ascending' ? 1 : -1;
-        }
-        }
-        else{
-            if (a[sortField] < b[sortField]) {
-                return sortDirection === 'descending' ? 1 : -1;
-              }
-              if (a[sortField] > b[sortField]) {
-                return sortDirection === 'descending' ? -1 : 1;
-              }
-            }
-        return 0;
-      });
+      const powersA = Array.isArray(a.powers) ? a.powers.length : 0;
+      const powersB = Array.isArray(b.powers) ? b.powers.length : 0;
+      return (powersA - powersB) * sortOrderMultiplier;
+    });
+  } else {
+    superheroes.sort((a, b) => {
+      const valueA = a[sortField] || '';
+      const valueB = b[sortField] || '';
+      return valueA.localeCompare(valueB, undefined, { numeric: true }) * sortOrderMultiplier;
+    });
+  }
+
   const resultsContainer = document.getElementById('results');
   resultsContainer.innerHTML = ''; // Clear previous results
-  superheroes.forEach(hero => {
+  if (sortField === 'power') {
+    superheroes.forEach(superhero => {
+      const div = document.createElement('div');
+      let eyeColor = superhero["Eye_Color"];
+    let skin = superhero["Skin"];
+    let Hair = superhero["Hair"];
+      // Update these fields to match the actual properties of your superhero objects
+      div.textContent = `ID: ${superhero.id}, Name: ${superhero.name}, Gender: ${superhero.gender}, Eye Color: ${eyeColor}, Race: ${superhero.race}, Hair: ${Hair}, Height: ${superhero.Height}, Publisher: ${superhero.Publisher}, Skin: ${skin}, Alignment: ${superhero.Alignment}, Weight: ${superhero.Weight}, powers: ${superhero.powers}`;
+      resultsContainer.appendChild(div);
+      
+    });
+  }
+  else{
+  superheroes.forEach(superhero => {
     const div = document.createElement('div');
+    let eyeColor = superhero["Eye color"];
+    let skin = superhero["Skin color"];
+    let Hair = superhero["Hair color"];
     // Update these fields to match the actual properties of your superhero objects
-    div.textContent = `Name: ${hero.name}`;
+    div.textContent = `ID: ${superhero.id}, Name: ${superhero.name}, Gender: ${superhero.Gender}, Eye Color: ${eyeColor}, Race: ${superhero.Race}, Hair: ${Hair}, Height: ${superhero.Height}, Publisher: ${superhero.Publisher}, Skin: ${skin}, Alignment: ${superhero.Alignment}, Weight: ${superhero.Weight}`;
     resultsContainer.appendChild(div);
   });
+  }
 }
-}
+
 
 
 // Add an event listener to the search button
@@ -247,3 +241,5 @@ listreturnbutton.addEventListener("click", () => {
   const listsorter = listorder.value;
   const attributeorder = attributeSelect.value;
   getSuperheroList(listreturnsi, listsorter, attributeorder);
+});
+
