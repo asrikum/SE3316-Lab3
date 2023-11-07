@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Superhero Search</title>
+</head>
+<body>
+<h1>Search for Superheroes</h1>
+<div id="searchForm">
+  <input type="text" id="searchTerm" placeholder="Enter search term..." >
+  <input type="text" id="displayvolume" placeholder="Enter number of results..." >
+  <select id="category">
+    <option value="ids">ID</option>
+    <option value="name">Name</option>
+    <option value="Race">Race</option>
+    <option value="Publisher">Publisher</option>
+    <option value="power">Power</option>
+  </select>
+  <select id="Category Order">
+    <option value="ascending">Ascending</option>
+    <option value="descending">Descending</option>  
+  </select>
+  <button type="submit" id="submit">Search</button>
+  <input type="text" id="listName" placeholder="Enter listname" >
+  <input type="text" id="ID" placeholder="Enter Superhero IDs..." >
+  <button type="submit" id="submitlist">Submit</button>
+  <input type="text" id="Return" placeholder="Enter Existing ListNames..." >
+  <select id="Attributes">
+    <option value="name">Name</option>
+    <option value="race">Race</option>
+    <option value="Publisher">Publisher</option>
+    <option value="power">Power</option>
+  </select>
+  <select id="List Order">
+    <option value="ascending">Ascending</option>
+    <option value="descending">Descending</option>  
+  </select>
+  <select id="List Objective">
+    <option value="GetList">Get List</option>
+    <option value="DeleteList">Delete List</option>  
+  </select>
+
+  <button type="submit" id="submitreturn">Submit</button>
+  <button type="submit" id="submitpublishers">Show Publishers</button>
+  <div id="results"></div>
+  <div id="list_results"></div>
+
+</div>
+
+
+<script src = "superhero.js"></script>
+</body>
+</html>
