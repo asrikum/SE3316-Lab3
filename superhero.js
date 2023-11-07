@@ -172,6 +172,7 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
   fetch(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
     .then(response => response.json())
     .then(data => {
+        console.log(data);
       displayResults(data, categoryorder, category);
     })
     .catch(error => {
@@ -180,44 +181,46 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
 }
 }
 
-function displayResults(data, listsorter, attributeorder) {
-    // Determine the multiplier for the sort order based on listsorter
-    const sortOrderMultiplier = listsorter === 'ascending' ? 1 : -1;
-
-    if (data.superheroes && Array.isArray(data.superheroes)) {
-        // Sort by the number of powers if 'power' is the attribute
-        if (attributeorder === 'power') {
+function displayResults(superheroes, sortDirection, sortField) {
+        if(sortField == 'power'){
             data.superheroes.sort((a, b) => {
                 const powersA = Array.isArray(a.powers) ? a.powers.length : 0;
                 const powersB = Array.isArray(b.powers) ? b.powers.length : 0;
                 return (powersA - powersB) * sortOrderMultiplier;
             });
-        } else {
-            // Sort by other attributes
-            data.superheroes.sort((a, b) => {
-                if (a[attributeorder] < b[attributeorder]) {
-                    return -1 * sortOrderMultiplier;
-                }
-                if (a[attributeorder] > b[attributeorder]) {
-                    return 1 * sortOrderMultiplier;
-                }
-                return 0;
-            });
         }
-
-        // Display the sorted results
-        const resultsContainer = document.getElementById('results');
-        resultsContainer.innerHTML = ''; // Clear previous results
-        data.superheroes.forEach(superhero => {
-            const div = document.createElement('div');
-            // Update these fields to match the actual properties of your superhero objects
-            div.textContent = `Name: ${superhero.name}, Powers: ${superhero.powers ? superhero.powers.length : 0}`;
-            resultsContainer.appendChild(div);
-        });
-    } else {
-        console.error('Data received is not an array:', data);
-    }
+        else{
+        
+    superheroes.sort((a, b) => {
+        if(sortDirection==='ascending'){
+        if (a[sortField] < b[sortField]) {
+          return sortDirection === 'ascending' ? -1 : 1;
+        }
+        if (a[sortField] > b[sortField]) {
+          return sortDirection === 'ascending' ? 1 : -1;
+        }
+        }
+        else{
+            if (a[sortField] < b[sortField]) {
+                return sortDirection === 'descending' ? 1 : -1;
+              }
+              if (a[sortField] > b[sortField]) {
+                return sortDirection === 'descending' ? -1 : 1;
+              }
+            }
+        return 0;
+      });
+  const resultsContainer = document.getElementById('results');
+  resultsContainer.innerHTML = ''; // Clear previous results
+  superheroes.forEach(hero => {
+    const div = document.createElement('div');
+    // Update these fields to match the actual properties of your superhero objects
+    div.textContent = `Name: ${hero.name}`;
+    resultsContainer.appendChild(div);
+  });
 }
+}
+
 
 // Add an event listener to the search button
 searchButton.addEventListener("click", () => {
@@ -228,7 +231,6 @@ searchButton.addEventListener("click", () => {
   const category = categorySelect.value;
   const catsorter = categoryorder.value;
   const displayvolume = parseInt(displayn);
-
   console.log(searchTerm, category, displayvolume, searchpower); // Log the search term and category for debugging
 
   // Call the search function with the current search term and category
@@ -245,7 +247,3 @@ listreturnbutton.addEventListener("click", () => {
   const listsorter = listorder.value;
   const attributeorder = attributeSelect.value;
   getSuperheroList(listreturnsi, listsorter, attributeorder);
-});
-
-
-
