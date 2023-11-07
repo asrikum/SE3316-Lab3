@@ -14,7 +14,7 @@ const categoryorder = document.getElementById('Category Order');
 const listorder = document.getElementById('List Order');
 const list_objective= document.getElementById('List Objective');
 const attributeSelect = document.getElementById('Attributes');
-
+const showpublishers = document.getElementById('submitpublishers');
 const fetchSuperhero = async () => {
     try{
 const res = await fetch('/api/superheroes')
@@ -237,6 +237,24 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
 }
 }
 
+function showpublishersresults() {
+  fetch('/api/superheroes/publishers')
+    .then(response => response.json())
+    .then(publishers => { // 'publishers' is expected to be an array based on the server's response
+        console.log(publishers);
+        const resultsContainer = document.getElementById('results');
+        resultsContainer.innerHTML = ''; // Clear previous results
+        publishers.forEach(publisher => { // Iterate over the array directly
+          const div = document.createElement('div');
+          div.textContent = `Publisher: ${publisher}`; // 'publisher' is a string, not an object
+          resultsContainer.appendChild(div);
+        });
+    })
+    .catch(error => {
+        console.error('Error fetching publishers:', error);
+    });
+}
+
 function displayResults(superheroes, sortDirection, sortField) {
   const sortOrderMultiplier = sortDirection === 'ascending' ? 1 : -1;
 
@@ -280,7 +298,9 @@ function displayResults(superheroes, sortDirection, sortField) {
   });
   }
 }
-
+showpublishers.addEventListener("click", () => {
+showpublishersresults();
+})
 
 
 // Add an event listener to the search button
@@ -310,3 +330,4 @@ listreturnbutton.addEventListener("click", () => {
   const list_obj= list_objective.value;
   getSuperheroList(listreturnsi, listsorter, attributeorder, list_obj);
 });
+
