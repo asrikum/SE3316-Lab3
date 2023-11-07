@@ -346,8 +346,6 @@ app.get('/api/lists/:listName', async (req, res) => {
   for (let heroId of currentList) {
     const superhero = superhero_pub.find(sh => sh.id === heroId);
 
-    console.log(superhero.name);
-    console.log(superhero.Gender);
     if (superhero) {
       const superheropowers = superheroes.find(sh => sh.hero_names === superhero.name);
       if (superheropowers) {
