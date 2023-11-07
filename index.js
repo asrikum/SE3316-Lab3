@@ -45,9 +45,8 @@ const superheroes = db.get('powers').value();
 const superhero_pub = db.get('info').value();
 router.get('/search/power', async (req, res) => {
   let { power, n } = req.query;
-
-  power = power.trim();
-
+  
+  let superheroarray = [];
   if (!power) {
     return res.status(400).send('Power query parameter is required');
   }
@@ -64,9 +63,30 @@ router.get('/search/power', async (req, res) => {
 
     const superheroNames = filteredSuperheroes.map(hero => hero.hero_names);
     const limitedResults = n ? superheroNames.slice(0, n) : superheroNames;
+    const superheroesWithIds = limitedResults.map(name => {
+      const superhero = superhero_pub.find(sh => sh.name === name);
+      const superheropowers = superheroes.find(sh => sh.hero_names === name);
+      const powers = Object.entries(superheropowers)
+        .filter(([key, value]) => value === "True" && key !== "hero_names")
+        .map(([key]) => key);
 
-
-    res.json(limitedResults);
+  
+  power = power.trim();
+      return superhero ? { 
+        powers:powers,
+        name: name, 
+        id: superhero.id, 
+        gender: superhero.Gender,
+        Eye_Color: superhero["Eye color"],
+        race:superhero.Race,
+        Hair:superhero["Hair color"],
+        Height: superhero.Height,
+        Publisher:superhero.Publisher,
+        Skin: superhero["Skin color"],
+        Alignment:superhero.Alignment,
+        Weight: superhero.Weight, } : null;
+    }).filter(sh => sh !== null);
+    res.json(superheroesWithIds);
   } catch (error) {
     console.error(error);
     res.status(500).send('Server error');
@@ -74,37 +94,75 @@ router.get('/search/power', async (req, res) => {
 });
 
 
-router.get('/:name/powers', async (req, res) => {
+router.get('/:id/powers', async (req, res) => {
+  try{
     console.log("whatever");
-    try {
        // Extract the name from the request parameters
-    const superheroName = req.params.name;
+    const superheroName = parseInt(req.params.id);
 
-    // Find the superhero by name
-    const superhero = superheroes.find(sh => sh.hero_names === superheroName);
+const superheroDetails= [];
+  const superhero = superhero_pub.find(sh => sh.id === superheroName);
 
-    // If the superhero is not found, send a 404 response
-    if (!superhero) {
-      return res.status(404).send('Superhero not found');
+    console.log(superhero.name);
+    console.log(superhero.Gender);
+    if (superhero) {
+      const superheropowers = superheroes.find(sh => sh.hero_names === superhero.name);
+      if (superheropowers) {
+        const powers = Object.entries(superheropowers)
+          .filter(([key, value]) => value === "True" && key !== "hero_names")
+          .map(([key]) => key);
+          let eyeColor = superhero["Eye color"];
+          let skin = superhero["Skin color"];
+          let Hair = superhero["Hair color"];
+        superheroDetails.push({
+          id: superheroName,
+          name: superhero.name,
+          gender: superhero.Gender,
+          Eye_Color: eyeColor,
+          race:superhero.Race,
+          Hair:Hair,
+          Height: superhero.Height,
+          Publisher:superhero.Publisher,
+          Skin: skin,
+          Alignment:superhero.Alignment,
+          Weight: superhero.Weight,
+          powers: powers,
+
+          
+        });
+      } else {
+        let eyeColor = superhero["Eye color"];
+          let skin = superhero["Skin color"];
+          let Hair = superhero["Hair color"];
+        superheroDetails.push({
+          id: superheroName,
+          name: superhero.name,
+          gender: superhero.Gender,
+          Eye_Color: eyeColor,
+          race:superhero.Race,
+          Hair:Hair,
+          Height: superhero.Height,
+          Publisher:superhero.Publisher,
+          Skin: skin,
+          Alignment:superhero.Alignment,
+          Weight: superhero.Weight,
+          powers: [] // No powers found
+        });
+      }
+      res.status(200).json({
+        message: 'Superhero details fetched successfully.',
+        superheroes: superheroDetails
+      });
+    
     }
+   } catch (error) {
+      console.error('Server error:', error);
+      res.status(500).send('Server error');
+    }
+    });
 
-    // Extract the powers from the superhero object
-    const powers = Object.entries(superhero)
-      .filter(([key, value]) => value === "True" && key !== "hero_names")
-      .map(([key]) => key);
 
-    // Send back the superhero's powers
-    res.json(powers);
-  } catch (error) {
-    // If there's an error, send a 500 response
-    res.status(500).send('Server error');
-  }
-  });
 
-  async function loadSuperheroesPublisher() {
-    const datapub = await fs.readFile('./superheroes/superhero_info.json', 'utf8');
-    return JSON.parse(datapub);
-  }
 
 router.get('/:id/publisher', async (req, res) => {
     try {
@@ -178,7 +236,7 @@ router.get('/:id', (req, res) => {
     if (!superhero) {
         return res.status(404).send('Superhero not found');
       }
-      res.json(superhero);
+      res.json([superhero]);
     }
         catch (error) {
             // If there's an error, send a 500 response
@@ -298,13 +356,14 @@ app.get('/api/lists/:listName', async (req, res) => {
           .map(([key]) => key);
           let eyeColor = superhero["Eye color"];
           let skin = superhero["Skin color"];
+          let Hair = superhero["Hair color"];
         superheroDetails.push({
           id: heroId,
           name: superhero.name,
           gender: superhero.Gender,
           Eye_Color: eyeColor,
           race:superhero.Race,
-          Hair:superhero.Hair,
+          Hair:Hair,
           Height: superhero.Height,
           Publisher:superhero.Publisher,
           Skin: skin,
@@ -315,6 +374,9 @@ app.get('/api/lists/:listName', async (req, res) => {
           
         });
       } else {
+        let eyeColor = superhero["Eye color"];
+          let skin = superhero["Skin color"];
+          let Hair = superhero["Hair color"];
         superheroDetails.push({
           id: heroId,
           name: superhero.name,
