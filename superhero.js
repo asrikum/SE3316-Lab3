@@ -12,6 +12,7 @@ const listreturn = document.getElementById('Return');
 const listreturnbutton = document.getElementById('submitreturn');
 const categoryorder = document.getElementById('Category Order');
 const listorder = document.getElementById('List Order');
+const attributeSelect = document.getElementById('Attributes');
 const fetchSuperhero = async () => {
     try{
 const res = await fetch('/api/superheroes')
@@ -73,7 +74,7 @@ function createSuperheroList(listName, superheroIds) {
         // Fetch the updated list
       });
   }
-  function getSuperheroList(listreturn) {
+  function getSuperheroList(listreturn, listsorter, attributeorder) {
     console.log(`Fetching list: ${listreturn}`); // Debug log
     fetch(`/api/lists/${listreturn}`) // Adjust the endpoint as per your API
         .then(response => {
@@ -83,13 +84,50 @@ function createSuperheroList(listName, superheroIds) {
             }
             return response.json();
         })
+    
         .then(data => {
             console.log('Received data:', data); // Debug log
             const resultsContainer = document.getElementById('list_results');
             resultsContainer.innerHTML = ''; // Clear previous results
-
+            const sortOrderMultiplier = listsorter === 'ascending' ? 1 : -1;
+console.log(attributeorder);
             // Check if data is an array before attempting to use forEach
             if (data.superheroes && Array.isArray(data.superheroes)) {
+                if(attributeorder == 'power'){
+                    data.superheroes.sort((a, b) => {
+                        const powersA = Array.isArray(a.powers) ? a.powers.length : 0;
+                        const powersB = Array.isArray(b.powers) ? b.powers.length : 0;
+                        return (powersA - powersB) * sortOrderMultiplier;
+                    });
+                }
+                else{
+                data.superheroes.sort((a, b) => {
+                    if(listsorter==='ascending'){
+                    if (a[attributeorder] < b[attributeorder]) {
+                        console.log(a[attributeorder]);
+                      return listsorter === 'ascending' ? -1 : 1;
+                    }
+                    if (a[attributeorder] > b[attributeorder]) {
+                        console.log(a[attributeorder]);
+                      return listsorter === 'ascending' ? 1 : -1;
+                      
+                    }
+                }
+                else{
+                    if (a[attributeorder] < b[attributeorder]) {
+                        return listsorter === 'descending' ? 1 : -1;
+                      }
+                      if (a[attributeorder] > b[attributeorder]) {
+                        return listsorter === 'descending' ? -1 : 1;
+                      }
+                    }
+
+                    
+
+                    
+                    return 0;
+                  });
+                }
                 data.superheroes.forEach(superhero => {
                     const div = document.createElement('div');
                     
@@ -142,28 +180,44 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
 }
 }
 
-// Define the function that will display the results
-function displayResults(superheroes, sortDirection, sortField) {
-    superheroes.sort((a, b) => {
-        if (a[sortField] < b[sortField]) {
-          return sortDirection === 'asc' ? -1 : 1;
+function displayResults(data, listsorter, attributeorder) {
+    // Determine the multiplier for the sort order based on listsorter
+    const sortOrderMultiplier = listsorter === 'ascending' ? 1 : -1;
+
+    if (data.superheroes && Array.isArray(data.superheroes)) {
+        // Sort by the number of powers if 'power' is the attribute
+        if (attributeorder === 'power') {
+            data.superheroes.sort((a, b) => {
+                const powersA = Array.isArray(a.powers) ? a.powers.length : 0;
+                const powersB = Array.isArray(b.powers) ? b.powers.length : 0;
+                return (powersA - powersB) * sortOrderMultiplier;
+            });
+        } else {
+            // Sort by other attributes
+            data.superheroes.sort((a, b) => {
+                if (a[attributeorder] < b[attributeorder]) {
+                    return -1 * sortOrderMultiplier;
+                }
+                if (a[attributeorder] > b[attributeorder]) {
+                    return 1 * sortOrderMultiplier;
+                }
+                return 0;
+            });
         }
-        if (a[sortField] > b[sortField]) {
-          return sortDirection === 'asc' ? 1 : -1;
-        }
-        return 0;
-      });
-  const resultsContainer = document.getElementById('results');
-  resultsContainer.innerHTML = ''; // Clear previous results
-  superheroes.forEach(hero => {
-    const div = document.createElement('div');
-    // Update these fields to match the actual properties of your superhero objects
-    div.textContent = `Name: ${hero.name}`;
-    resultsContainer.appendChild(div);
-  });
+
+        // Display the sorted results
+        const resultsContainer = document.getElementById('results');
+        resultsContainer.innerHTML = ''; // Clear previous results
+        data.superheroes.forEach(superhero => {
+            const div = document.createElement('div');
+            // Update these fields to match the actual properties of your superhero objects
+            div.textContent = `Name: ${superhero.name}, Powers: ${superhero.powers ? superhero.powers.length : 0}`;
+            resultsContainer.appendChild(div);
+        });
+    } else {
+        console.error('Data received is not an array:', data);
+    }
 }
-
-
 
 // Add an event listener to the search button
 searchButton.addEventListener("click", () => {
@@ -189,7 +243,9 @@ submitlistButton.addEventListener("click", () => {
 listreturnbutton.addEventListener("click", () => {
   const listreturnsi = listreturn.value;
   const listsorter = listorder.value;
-  getSuperheroList(listreturnsi);
+  const attributeorder = attributeSelect.value;
+  getSuperheroList(listreturnsi, listsorter, attributeorder);
 });
+
 
 
