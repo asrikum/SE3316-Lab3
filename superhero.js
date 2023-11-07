@@ -12,6 +12,7 @@ const listreturn = document.getElementById('Return');
 const listreturnbutton = document.getElementById('submitreturn');
 const categoryorder = document.getElementById('Category Order');
 const listorder = document.getElementById('List Order');
+const list_objective= document.getElementById('List Objective');
 const attributeSelect = document.getElementById('Attributes');
 
 const fetchSuperhero = async () => {
@@ -75,7 +76,9 @@ function createSuperheroList(listName, superheroIds) {
         // Fetch the updated list
       });
   }
-  function getSuperheroList(listreturn, listsorter, attributeorder) {
+  function getSuperheroList(listreturn, listsorter, attributeorder, list_obj) {
+    console.log(list_obj)
+    if(list_obj=="GetList"){
     console.log(`Fetching list: ${listreturn}`); // Debug log
     fetch(`/api/lists/${listreturn}`) // Adjust the endpoint as per your API
         .then(response => {
@@ -88,7 +91,7 @@ function createSuperheroList(listName, superheroIds) {
     
         .then(data => {
             console.log('Received data:', data); // Debug log
-            const resultsContainer = document.getElementById('list_results');
+            const resultsContainer = document.getElementById('results');
             resultsContainer.innerHTML = ''; // Clear previous results
             const sortOrderMultiplier = listsorter === 'ascending' ? 1 : -1;
 console.log(attributeorder);
@@ -140,7 +143,43 @@ console.log(attributeorder);
         .catch(error => {
             console.error('Error:', error);
         });
+      }
+      else{
+        const fetchList = {
+          method: 'DELETE',
+         };
+    //input Sanitization before fetching
+        fetch(`/api/lists/${listreturn}`, fetchList)
+        .then(response => {
+          if (!response.ok) {
+            // If the server response was not ok, throw an error with the status text
+            throw new Error(`Network response was not ok: ${response.statusText}`);
+          }
+          // Try to parse the response as JSON, but handle cases where it's not JSON
+          return response.text().then(text => {
+            try {
+              const resultsContainer = document.getElementById('results');
+              resultsContainer.innerHTML = 'List deleted successfully';
+              // Try to parse text as JSON
+              return JSON.parse(text);
+            } catch {
+              // If it's not JSON, just return the text
+              return text;
+            }
+          });
+        })
+        .then(data => {
+          // Handle the data (which could be an object if JSON, or a string if not)
+        
+          console.log('Delete response:', data);
+        })
+        .catch(error => {
+          // Handle any errors that occurred during the fetch
+          console.error('Fetch error:', error);
+        });
 }
+  }
+
 
 
 // Define the function that will handle the search
@@ -157,6 +196,34 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
           console.error('Error:', error);
         });
     }
+    else if(category == 'ids'){
+      console.log("hi");
+      const converter= parseInt(searchTerm);
+      console.log(converter)
+      fetch(`api/superheroes/${converter}/powers`)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+        console.log(data.length);
+        const resultsContainer = document.getElementById('results');
+        resultsContainer.innerHTML = '';
+        const superhero = data.superheroes[0]; // Access the first (and only) item in the array
+        console.log(superhero); 
+          const div = document.createElement('div');
+          let eyeColor = superhero["Eye_Color"];
+          let skin = superhero["Skin"];
+          let Hair = superhero["Hair"];
+          // Update these fields to match the actual properties of your superhero objects
+          div.textContent = `ID: ${superhero.id}, Name: ${superhero.name}, Gender: ${superhero.gender}, Eye Color: ${eyeColor}, Race: ${superhero.race}, Hair: ${Hair}, Height: ${superhero.Height}, Publisher: ${superhero.Publisher}, Skin: ${skin}, Alignment: ${superhero.Alignment}, Weight: ${superhero.Weight}, Powers: ${superhero.powers.join(', ')}`;
+          resultsContainer.appendChild(div);
+     
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+
+    }
+  
     else{
   fetch(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
     .then(response => response.json())
@@ -240,6 +307,6 @@ listreturnbutton.addEventListener("click", () => {
   const listreturnsi = listreturn.value;
   const listsorter = listorder.value;
   const attributeorder = attributeSelect.value;
-  getSuperheroList(listreturnsi, listsorter, attributeorder);
+  const list_obj= list_objective.value;
+  getSuperheroList(listreturnsi, listsorter, attributeorder, list_obj);
 });
-
