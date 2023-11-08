@@ -63,7 +63,8 @@ function createSuperheroList(listName, superheroIds) {
         };
   console.log(JSON.stringify(superheroIds ));
 //input Sanitization before fetching
-        return fetch(`/api/lists/${listName}`, fetchIDs); // Adjust the endpoint as per your API
+const encodedlistName = encodeURIComponent(listName);
+        return fetch(`/api/lists/${encodedlistName}`, fetchIDs); // Adjust the endpoint as per your API
       })
       .then(response => {
         if (!response.ok) {  
@@ -79,8 +80,10 @@ function createSuperheroList(listName, superheroIds) {
   function getSuperheroList(listreturn, listsorter, attributeorder, list_obj) {
     console.log(list_obj)
     if(list_obj=="GetList"){
-    console.log(`Fetching list: ${listreturn}`); // Debug log
-    fetch(`/api/lists/${listreturn}`) // Adjust the endpoint as per your API
+    console.log(`Fetching list: ${listreturn}`); 
+    // Debug log
+    const encodedreturn = encodeURIComponent(listreturn);
+    fetch(`/api/lists/${encodedreturn}`) // Adjust the endpoint as per your API
         .then(response => {
             if (!response.ok) {
                 console.error('Fetch error:', response.statusText); // Debug log
@@ -149,7 +152,8 @@ console.log(attributeorder);
           method: 'DELETE',
          };
     //input Sanitization before fetching
-        fetch(`/api/lists/${listreturn}`, fetchList)
+const encodedreturn = encodeURIComponent(listreturn);
+        fetch(`/api/lists/${encodedreturn}`, fetchList)
         .then(response => {
           if (!response.ok) {
             // If the server response was not ok, throw an error with the status text
@@ -186,7 +190,9 @@ console.log(attributeorder);
 function searchSuperheroes(searchTerm, category, displayvolume, searchpower, categoryorder) {
     console.log(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
     if(category == 'power'){
-        console.log(`api/superheroes/search/power?power=${searchpower}&n=${displayvolume}`);
+      const encodedSearchpower = encodeURIComponent(searchpower);
+      const encodeddisplayvolume = encodeURIComponent(displayvolume);
+        console.log(`api/superheroes/search/power?power=${encodedSearchpower}&n=${encodeddisplayvolume}`);
         fetch(`api/superheroes/search/power?power=${searchpower}&n=${displayvolume}`)
         .then(response => response.json())
         .then(data => {
@@ -200,7 +206,8 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
       console.log("hi");
       const converter= parseInt(searchTerm);
       console.log(converter)
-      fetch(`api/superheroes/${converter}/powers`)
+      const encodedconverter = encodeURIComponent(converter);
+      fetch(`api/superheroes/${encodedconverter}/powers`)
       .then(response => response.json())
       .then(data => {
         console.log(data);
@@ -225,7 +232,10 @@ function searchSuperheroes(searchTerm, category, displayvolume, searchpower, cat
     }
   
     else{
-  fetch(`api/superheroes/search?field=${category}&pattern=${searchTerm}&n=${displayvolume}`)
+      const encodedSearchTerm = encodeURIComponent(searchTerm);
+const encodedCategory = encodeURIComponent(category);
+const encodeddisplayvolume = encodeURIComponent(displayvolume);
+  fetch(`api/superheroes/search?field=${encodedCategory}&pattern=${encodedSearchTerm}&n=${encodeddisplayvolume}`)
     .then(response => response.json())
     .then(data => {
         console.log(data);
@@ -301,14 +311,33 @@ function displayResults(superheroes, sortDirection, sortField) {
 showpublishers.addEventListener("click", () => {
 showpublishersresults();
 })
+function sanitizeString(str) {
+  return str.trim().replace(/[&<>"'/]/g, function (match) {
+    return ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+      '/': '&#x2F;'
+    })[match];
+  });
+}
+function sanitizeNumber(num) {
+  const parsed = parseInt(num, 10);
+  return isNaN(parsed) ? 0 : parsed;
+}
+function sanitizeArray(arr) {
+  return arr.map(el => sanitizeString(el));
+}
 
 
 // Add an event listener to the search button
 searchButton.addEventListener("click", () => {
   // Get the current value of the input and select elements
-  const displayn = displayvol.value.toLowerCase();
-  const searchTerm = searchTermInput.value.toLowerCase();
-  const searchpower = searchTermInput.value;
+  const displayn = sanitizeNumber(displayvol.value.toLowerCase());
+  const searchTerm = sanitizeString(searchTermInput.value.toLowerCase());
+  const searchpower = sanitizeString(searchTermInput.value);
   const category = categorySelect.value;
   const catsorter = categoryorder.value;
   const displayvolume = parseInt(displayn);
@@ -324,7 +353,7 @@ submitlistButton.addEventListener("click", () => {
   console.log(ids)
 });
 listreturnbutton.addEventListener("click", () => {
-  const listreturnsi = listreturn.value;
+  const listreturnsi = sanitizeString(listreturn.value);
   const listsorter = listorder.value;
   const attributeorder = attributeSelect.value;
   const list_obj= list_objective.value;
