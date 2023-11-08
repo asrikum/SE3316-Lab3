@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const lowdb = require('lowdb');
 const FileSync = require('lowdb/adapters/FileSync');
+const { param, body, query, validationResult } = require('express-validator');
 
 const app = express();
 app.use(cors());
@@ -43,9 +44,17 @@ router.route('/')//All the routes to the base prefix
 // Call the function to load superheroes when starting the server
 const superheroes = db.get('powers').value();
 const superhero_pub = db.get('info').value();
-router.get('/search/power', async (req, res) => {
+
+router.get('/search/power', [
+  // Validate the 'power' query parameter
+  query('power').notEmpty().withMessage('Power query parameter is required'),
+  // Optionally, you can chain more validators
+  query('n').optional().isNumeric().withMessage('Parameter n must be a number')
+
+],  async (req, res) => {
   let { power, n } = req.query;
-  
+  n = n ? parseInt(n, 10) : undefined;
+
   let superheroarray = [];
   if (!power) {
     return res.status(400).send('Power query parameter is required');
@@ -56,13 +65,17 @@ router.get('/search/power', async (req, res) => {
       // Check if any of the hero's powers match the power we're looking for
       return Object.entries(hero).some(([key, value]) => key === power && value === "True");
     });
+    console.log('Filtered Superheroes:', filteredSuperheroes);
 
     if (filteredSuperheroes.length === 0) {
       return res.status(404).send('No superheroes found with the given power');
     }
 
+    n = n ? parseInt(n, 10) : undefined;
+    
+
     const superheroNames = filteredSuperheroes.map(hero => hero.hero_names);
-    const limitedResults = n ? superheroNames.slice(0, n) : superheroNames;
+    const limitedResults = n ? superheroNames.slice(0, n+1) : superheroNames;
     const superheroesWithIds = limitedResults.map(name => {
       const superhero = superhero_pub.find(sh => sh.name === name);
       const superheropowers = superheroes.find(sh => sh.hero_names === name);
@@ -71,9 +84,8 @@ router.get('/search/power', async (req, res) => {
         .map(([key]) => key);
 
   
-  power = power.trim();
+  
       return superhero ? { 
-        powers:powers,
         name: name, 
         id: superhero.id, 
         gender: superhero.Gender,
@@ -84,7 +96,8 @@ router.get('/search/power', async (req, res) => {
         Publisher:superhero.Publisher,
         Skin: superhero["Skin color"],
         Alignment:superhero.Alignment,
-        Weight: superhero.Weight, } : null;
+        Weight: superhero.Weight, 
+        powers:powers} : null;
     }).filter(sh => sh !== null);
     res.json(superheroesWithIds);
   } catch (error) {
@@ -94,7 +107,15 @@ router.get('/search/power', async (req, res) => {
 });
 
 
-router.get('/:id/powers', async (req, res) => {
+
+
+router.get('/:id/powers', [
+  param('id').isInt().withMessage('ID must be an integer'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try{
     console.log("whatever");
        // Extract the name from the request parameters
@@ -164,7 +185,13 @@ const superheroDetails= [];
 
 
 
-router.get('/:id/publisher', async (req, res) => {
+router.get('/:id/publisher', [
+  param('id').isInt().withMessage('ID must be an integer'),
+], async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  } 
     try {
 
     const superheropublisher = parseInt(req.params.id);
@@ -181,7 +208,12 @@ if (!superheropublisherid) {
         res.status(500).send('Server error');
       }
 });  
-router.get('/publishers', async (req, res) => {
+
+router.get('/publishers', [
+  // Validate the 'power' query parameter
+  query('publishers').notEmpty().withMessage('Publishers query parameter is required'),
+  // Optionally, you can chain more validators
+], async (req, res) => {
   try {
     // Create a set of unique publisher names
     const publisherSet = new Set(superhero_pub.map(hero => hero.Publisher));
@@ -197,7 +229,14 @@ router.get('/publishers', async (req, res) => {
   }
 });
 
-router.get('/search', (req, res) => {
+router.get('/search', [
+  // Validate 'field' is one of the allowed fields
+  query('field').isIn(['name', 'powers', 'Publishers', 'Race']).withMessage('Invalid search field'),
+  // Validate 'pattern' is not empty and is a string
+  query('pattern').isString().notEmpty().withMessage('Pattern must be provided'),
+  // Validate 'n' is an integer and is optional
+  query('n').optional().isInt({ min: 1 }).withMessage('n must be a positive integer')]
+  , (req, res) => {
   const { field, pattern, n } = req.query;
 
   if (!field || !pattern) {
@@ -226,7 +265,9 @@ router.get('/search', (req, res) => {
 });
 
 
-router.get('/:id', (req, res) => {
+router.get('/:id', [
+  param('id').isInt().withMessage('ID must be an integer'),
+], (req, res) => {
     try {
 
         const superheroid = parseInt(req.params.id);
@@ -244,7 +285,14 @@ router.get('/:id', (req, res) => {
           }
 });
 
-app.post('/api/lists', async(req, res)=>{
+app.post('/api/lists', [
+  // Validate and sanitize the listName
+  body('listName')
+    .trim() // Remove whitespace
+    .escape() // Escape HTML special characters
+    .notEmpty().withMessage('List name is required')
+    .isAlphanumeric().withMessage('List name must be alphanumeric'), // Ensure it's alphanumeric to prevent injection
+], async(req, res)=>{
   // Extract the list name and the superheroes from the request body
   try {
     
@@ -274,7 +322,19 @@ app.post('/api/lists', async(req, res)=>{
   }
 });
 
-app.post('/api/lists/:listName', async (req, res) => {
+app.post('/api/lists/:listName', [
+  // Validate and sanitize the listName in the URL parameter
+  param('listName')
+    .trim()
+    .escape()
+    .notEmpty().withMessage('List name is required')
+    .isAlphanumeric().withMessage('List name must be alphanumeric'),
+
+  // Validate and sanitize the superheroIds in the request body
+  body('superheroIds')
+    .isArray().withMessage('Superhero IDs must be an array')
+    .custom((array) => array.every(id => typeof id === 'number')).withMessage('Every ID must be a number'),
+], async (req, res) => {
   // Extract the list name from the URL parameters
   const { listName } = req.params;
 
@@ -282,8 +342,11 @@ app.post('/api/lists/:listName', async (req, res) => {
   const { superheroIds } = req.body;
 
   // Check if the list name already exists
-  const listExists = db.has(`lists.${listName}`).value();
+  console.log('Available lists:', db.getState().lists); // Adjust depending on your DB structure
+console.log('Requested listName:', listName);
 
+  const listExists = db.has(`lists.${listName}`).value();
+console.log(listExists);
   if (!listExists) {
       // If the list name does not exist, return an error
       return res.status(404).send('List name does not exist.');
@@ -316,7 +379,15 @@ console.log(listheroes);
   });
 });
 
-app.get('/api/lists/:listName', async (req, res) => {
+app.get('/api/lists/:listName', [
+  // Validate and sanitize the 'listName' parameter
+  param('listName').trim().escape().notEmpty().withMessage('List name is required.'),
+], async (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     // Extract the listName from the request parameters
     const { listName } = req.params;
@@ -381,7 +452,7 @@ app.get('/api/lists/:listName', async (req, res) => {
           gender: superhero.Gender,
           Eye_Color: eyeColor,
           race:superhero.Race,
-          Hair:superhero.Hair,
+          Hair:Hair,
           Height: superhero.Height,
           Publisher:superhero.Publisher,
           Skin: skin,
@@ -404,7 +475,15 @@ app.get('/api/lists/:listName', async (req, res) => {
 }
 });
 
-app.delete('/api/lists/:listName', (req, res) => {
+app.delete('/api/lists/:listName', [
+  // Validate and sanitize the 'listName' parameter
+  param('listName').trim().escape().notEmpty().withMessage('List name is required.'),
+], (req, res) => {
+  // Check for validation errors
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
   try {
     // Extract the listName from the request parameters
     const { listName } = req.params;

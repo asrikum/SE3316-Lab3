@@ -46,13 +46,13 @@ function createSuperheroList(listName, superheroIds) {
     fetch('/api/lists', fetchList)
       .then(response => {
         if (!response.ok) {
-            listresults.innerHTML='List Exists';
+            herocontent.innerHTML='List Exists';
           throw new Error('Network response was not ok ' + response.statusText);
         }
         return response.json(); // Parse JSON response into JavaScript object
       })
       .then(data => {
-        listresults.innerHTML='List Created';
+        herocontent.innerHTML='List Created';
         console.log('List created:', data); // Handle the response data
   
         // Now, add superhero IDs to the list
